@@ -14,7 +14,7 @@ exports.getEmployeeDetails = async (req, res) => {
 
         return res.status(200).json({
             success:true,
-            message:"Employees details returned successfully",
+            message:"All Employees details returned successfully",
             data:employeeDetails
         })
     } catch(error){
@@ -23,6 +23,35 @@ exports.getEmployeeDetails = async (req, res) => {
             success:false,
             message:"Internal Server Error"
         });
+    }
+}
+
+//get individual employee details
+exports.getIndividualEmployeeDetails = async (req, res) => {
+    try{
+        const empId = req.params.id;
+
+        const empDetails = await Employee.findById(empId);
+
+        if(!empDetails){
+            return res.status(404).json({
+                success:false,
+                message:"No Employee Details Present"
+            })
+        }
+
+        return res.status(200).json({
+            success:true,
+            message:"Employee Details Fetched Successfully",
+            data: empDetails
+        })
+        
+    } catch(error){
+        console.log(error);
+        return res.status(500).json({
+            success:true,
+            message:"Internal Server Error"
+        })
     }
 }
 
@@ -69,14 +98,29 @@ exports.createEmployee = async (req, res) => {
 exports.editEmployee = async (req, res) => {
     try{
         const empId = req.params.id;
-
         const editedEmpData = req.body;
 
-        const empData = await Employee.findById(empId);
+        const updatedEmp = await Employee.findByIdAndUpdate(
+            empId,
+            {
+                $set: editedEmpData
+            },
+            {
+                new: true, runValidators: true
+            }
+        );
 
-        if(empData !== -1){
-            Employee[empData] = { ...Employee[empData], ...editedEmpData };
+        if(!updatedEmp){
+            return res.status(404).json({
+                success:false,
+                message:"Employee not found"
+            })
         }
+
+        return res.status(200).json({
+            success:true,
+            message:"Employee Details Updated Successfully"
+        })
 
     } catch(error){
         console.log(error);
