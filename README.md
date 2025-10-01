@@ -63,7 +63,7 @@ Before running the project, ensure you have:
 - A running **database instance** (MongoDB, MongoDB Compass recommended)  
 - (Optional) **Postman** or any API client to test endpoints  
 
-### Installation
+### Installation - First (In localHost)
 
 1. **Clone the repository**
 
@@ -97,6 +97,18 @@ Before running the project, ensure you have:
     npm run dev
     This will launch the frontend (at http://localhost:3000 by default), and the UI will call your backend APIs for CRUD operations.
 
+### Installation - Second (In docker)
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/rahil1801/EmployeeDataMgmt.git
+   cd EmployeeDataMgmt
+
+   docker compose up --build
+
+**Note:** To use this method, Docker Desktop must be installed in your computer
+**Note:** By using this method, it is not necessary to set the env variables as compose build cmd automatically does it.
 
 ## Contributing
 
