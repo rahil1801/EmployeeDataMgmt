@@ -20,6 +20,7 @@ function Modal({ isOpen, onClose, mode, employee, onSave, onDelete }) {
     dateOfJoining: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (employee) {
@@ -41,8 +42,31 @@ function Modal({ isOpen, onClose, mode, employee, onSave, onDelete }) {
     }
   }, [employee]);
 
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.name || formData.name.trim().length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+    if (!formData.position || formData.position.trim().length < 2) {
+      newErrors.position = "Position must be at least 2 characters";
+    }
+    if (formData.dateOfJoining) {
+      const d = new Date(formData.dateOfJoining);
+      if (isNaN(d.getTime())) {
+        newErrors.dateOfJoining = "Enter a valid date";
+      }
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) return;
     setIsSubmitting(true);
     try {
       await onSave(formData);
@@ -102,6 +126,9 @@ function Modal({ isOpen, onClose, mode, employee, onSave, onDelete }) {
                   required
                   disabled={isSubmitting}
                 />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                )}
               </div>
 
               <div>
@@ -117,6 +144,9 @@ function Modal({ isOpen, onClose, mode, employee, onSave, onDelete }) {
                   required
                   disabled={isSubmitting}
                 />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                )}
               </div>
 
               <div>
@@ -132,6 +162,9 @@ function Modal({ isOpen, onClose, mode, employee, onSave, onDelete }) {
                   required
                   disabled={isSubmitting}
                 />
+                {errors.position && (
+                  <p className="mt-1 text-sm text-red-600">{errors.position}</p>
+                )}
               </div>
 
               <div>
@@ -145,6 +178,9 @@ function Modal({ isOpen, onClose, mode, employee, onSave, onDelete }) {
                   className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   disabled={isSubmitting}
                 />
+                {errors.dateOfJoining && (
+                  <p className="mt-1 text-sm text-red-600">{errors.dateOfJoining}</p>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4">
@@ -159,7 +195,7 @@ function Modal({ isOpen, onClose, mode, employee, onSave, onDelete }) {
                 <button
                   type="submit"
                   className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || Object.keys(errors).length > 0}
                 >
                   {isSubmitting ? "Saving..." : mode === "add" ? "Add Employee" : "Update Employee"}
                 </button>
@@ -287,12 +323,16 @@ export default function EmployeeTable({ loading, allEmployees, onRefresh }) {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [detailsEmployeeId, setDetailsEmployeeId] = useState(null);
+  const [search, setSearch] = useState("");
 
   const recordsPerPage = 5;
-  const totalRecords = allEmployees?.length || 0;
+  const filteredEmployees = (allEmployees || []).filter((e) =>
+    e.name?.toLowerCase().includes(search.trim().toLowerCase())
+  );
+  const totalRecords = filteredEmployees.length;
   const totalPages = Math.ceil(totalRecords / recordsPerPage);
   const startIndex = (currentPage - 1) * recordsPerPage;
-  const currentRecords = allEmployees?.slice(startIndex, startIndex + recordsPerPage);
+  const currentRecords = filteredEmployees.slice(startIndex, startIndex + recordsPerPage);
 
   // Auto-navigate to page 1 if current page becomes empty
   useEffect(() => {
@@ -300,6 +340,11 @@ export default function EmployeeTable({ loading, allEmployees, onRefresh }) {
       setCurrentPage(1);
     }
   }, [totalPages, currentPage]);
+
+  useEffect(() => {
+    // whenever search changes, reset to page 1
+    setCurrentPage(1);
+  }, [search]);
 
   const handlePageChange = (page) => {
     if (page > 0 && page <= totalPages) setCurrentPage(page);
@@ -364,6 +409,14 @@ export default function EmployeeTable({ loading, allEmployees, onRefresh }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Employee Management</h2>
+        <div className="flex w-full sm:w-auto gap-2">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name..."
+            className="flex-1 sm:w-64 px-4 py-3 border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+          />
+        </div>
         <button
           onClick={() => openModal("add")}
           className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 sm:px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium shadow-sm w-full sm:w-auto"
